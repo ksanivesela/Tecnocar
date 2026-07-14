@@ -13,8 +13,11 @@ backend/dist/
 !.env.example
 !*/.env.example
 
-# Backend uploads (local dev storage)
-backend/uploads/
+# Backend uploads (local dev storage), pero se versiona el placeholder de imagen
+backend/uploads/*
+!backend/uploads/productos/
+backend/uploads/productos/*
+!backend/uploads/productos/placeholder.svg
 
 # Prisma
 backend/generated/

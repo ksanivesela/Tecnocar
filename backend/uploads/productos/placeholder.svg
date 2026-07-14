@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 480" width="640" height="480">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="42%" r="75%">
+      <stop offset="0%" stop-color="#1b2130"/>
+      <stop offset="100%" stop-color="#0d1016"/>
+    </radialGradient>
+  </defs>
+  <rect width="640" height="480" fill="url(#bg)"/>
+  <rect width="640" height="480" fill="none" stroke="#232a36" stroke-width="2"/>
+
+  <g transform="translate(320,205)" fill="none" stroke="#00E676" stroke-width="10" opacity="0.9">
+    <circle r="66" stroke-opacity="0.55"/>
+    <circle r="26" stroke-opacity="0.9"/>
+    <g stroke-linecap="round">
+      <line x1="0" y1="-86" x2="0" y2="-104"/>
+      <line x1="0" y1="86" x2="0" y2="104"/>
+      <line x1="-86" y1="0" x2="-104" y2="0"/>
+      <line x1="86" y1="0" x2="104" y2="0"/>
+      <line x1="-60.8" y1="-60.8" x2="-73.5" y2="-73.5"/>
+      <line x1="60.8" y1="-60.8" x2="73.5" y2="-73.5"/>
+      <line x1="-60.8" y1="60.8" x2="-73.5" y2="73.5"/>
+      <line x1="60.8" y1="60.8" x2="73.5" y2="73.5"/>
+    </g>
+  </g>
+
+  <g transform="translate(320,205)" fill="#0d1016" stroke="#00E676" stroke-width="7" opacity="0.95">
+    <path d="M-46,40 L4,-10 a17,17 0 1 1 14,14 L-32,54 a10,10 0 0 1 -14,-14z" stroke-linejoin="round"/>
+  </g>
+
+  <text x="320" y="372" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#e6e9ef" letter-spacing="2">TECNOCAR N&amp;S</text>
+  <text x="320" y="404" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#6b7280" letter-spacing="3">IMAGEN NO DISPONIBLE</text>
+</svg>
