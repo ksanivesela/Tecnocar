@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Rol {
+  ADMIN
+  CLIENTE
+}
+
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  CANCELADA
+  FINALIZADA
+}
+
+enum EstadoPedido {
+  PENDIENTE
+  CONFIRMADO
+  ENVIADO
+  COMPLETADO
+  CANCELADO
+}
+
+model Usuario {
+  id           Int        @id @default(autoincrement())
+  nombres      String
+  apellidos    String
+  email        String     @unique
+  password     String
+  telefono     String?
+  rol          Rol        @default(CLIENTE)
+
+  pedidos      Pedido[]
+  reservas     Reserva[]
+
+  createdAt    DateTime   @default(now())
+}
+
+model Categoria {
+  id          Int          @id @default(autoincrement())
+  nombre      String       @unique
+
+  productos   Producto[]
+}
+
+model Producto {
+
+  id          Int          @id @default(autoincrement())
+
+  nombre      String
+
+  marca       String
+
+  descripcion String
+
+  precio      Float
+
+  stock       Int
+
+  imagen      String
+
+  vehiculosCompatibles String[]
+
+  destacado   Boolean      @default(false)
+
+  activo      Boolean      @default(true)
+
+  categoriaId Int
+
+  categoria   Categoria @relation(fields:[categoriaId],references:[id])
+
+  detalles    DetallePedido[]
+
+  createdAt   DateTime  @default(now())
+
+  updatedAt   DateTime  @updatedAt
+
+}
+
+model Pedido{
+
+  id          Int      @id @default(autoincrement())
+
+  usuarioId   Int?
+
+  usuario     Usuario? @relation(fields:[usuarioId],references:[id])
+
+  nombre      String
+
+  email       String
+
+  telefono    String
+
+  total       Float
+
+  estado      EstadoPedido @default(PENDIENTE)
+
+  createdAt   DateTime @default(now())
+
+  detalles    DetallePedido[]
+
+}
+
+model DetallePedido{
+
+  id          Int @id @default(autoincrement())
+
+  pedidoId    Int
+
+  productoId  Int
+
+  cantidad    Int
+
+  precio      Float
+
+  pedido       Pedido @relation(fields:[pedidoId],references:[id])
+
+  producto     Producto @relation(fields:[productoId],references:[id])
+
+}
+
+model Reserva{
+
+  id          Int @id @default(autoincrement())
+
+  usuarioId   Int?
+
+  usuario     Usuario? @relation(fields:[usuarioId],references:[id])
+
+  nombre      String
+
+  email       String
+
+  telefono    String
+
+  vehiculo    String
+
+  placa       String
+
+  servicio    String
+
+  fecha       DateTime
+
+  observacion String?
+
+  estado      EstadoReserva @default(PENDIENTE)
+
+  createdAt   DateTime @default(now())
+
+}
+
+model Mensaje {
+
+  id        Int      @id @default(autoincrement())
+
+  nombre    String
+
+  email     String
+
+  telefono  String?
+
+  mensaje   String
+
+  leido     Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+}

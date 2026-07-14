@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+frontend/dist/
+backend/dist/
+
+# Env files (keep .env.example)
+.env
+.env.*
+!.env.example
+!*/.env.example
+
+# Backend uploads (local dev storage)
+backend/uploads/
+
+# Prisma
+backend/generated/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Coverage / tests
+coverage/
+.nyc_output/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Backups del proyecto (mantener local, no versionar)
+*.zip
+
+# Docker volumes locales
+docker/volumes/
