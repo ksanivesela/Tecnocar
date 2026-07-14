@@ -1,102 +1,90 @@
 # Despliegue en el VPS de Contabo
 
-Guía paso a paso para publicar Tecnocar N&S en tu VPS (83.171.248.249) con tus subdominios:
+Guía para publicar Tecnocar N&S en el VPS (83.171.248.249), que ya tiene **Traefik** (proxy inverso) y **Portainer** corriendo de un proyecto anterior. Este proyecto se integra a ese Traefik existente en vez de instalar un proxy propio.
 
+Subdominios:
 - `tecnocar.byronrm.com` → frontend
 - `backtec.byronrm.com` → backend (API)
 - `pgtec.byronrm.com` → Adminer (administración de la base de datos)
-- `portainertec.byronrm.com` → Portainer
+- `portainertec.byronrm.com` → Portainer (ya existente, fuera de este proyecto)
 
-## 0. Requisitos previos en el VPS
+> ⚠️ Traefik en este VPS solo tiene el entrypoint `web` (puerto 80, HTTP). No hay HTTPS/Let's Encrypt configurado todavía. Por eso el sitio queda en `http://` por ahora — ver la sección "Agregar HTTPS" al final para la opción de subir eso a Traefik (afecta la configuración compartida, así que es un paso aparte y deliberado).
 
-- Docker y Docker Compose instalados (`docker --version`, `docker compose version`).
-- Portainer, si aún no lo tienes:
-  ```bash
-  docker volume create portainer_data
-  docker run -d -p 8000:8000 --name portainer --restart=always \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -v portainer_data:/data portainer/portainer-ce:latest
-  ```
-- Los 4 subdominios ya apuntan (DNS tipo A) a `83.171.248.249` (confirmado).
+## Cómo se despliega
 
-## 1. Copiar el proyecto al VPS
+Ya está automatizado con GitHub Actions (`.github/workflows/deploy.yml`): cada `git push` a `main` copia el proyecto a `/opt/tecnocar` en el VPS y corre `docker compose up -d --build`. Los pasos de abajo son para el primer despliegue / referencia.
 
-Desde tu máquina, sube el proyecto (por `git` o `scp`) a una carpeta en el VPS, por ejemplo `/opt/tecnocar`.
+Secrets ya configurados en GitHub (Settings → Secrets and variables → Actions):
+`VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `POSTGRES_PASSWORD`, `JWT_SECRET`.
 
-```bash
-# en el VPS
-cd /opt
-git clone <tu-repositorio> tecnocar
-cd tecnocar
-```
+## 1. Red de Traefik
 
-## 2. Configurar variables de entorno
+El `docker-compose.yml` espera una red externa llamada `traefik` (la misma que ya usa el Traefik existente). Ya existe en este VPS — no hay que crearla.
+
+## 2. Variables de entorno en el VPS
+
+El workflow escribe `/opt/tecnocar/.env` automáticamente en cada despliegue con los secrets de GitHub. Si alguna vez necesitas tocarlo a mano:
 
 ```bash
-cp .env.example .env
+cd /opt/tecnocar
 nano .env
 ```
 
-Completa con valores **reales de producción**:
-
 ```env
 POSTGRES_USER=postgres
-POSTGRES_PASSWORD=<clave-fuerte-y-unica>
+POSTGRES_PASSWORD=<el secret de GitHub>
 POSTGRES_DB=tecnocar
-
-JWT_SECRET=<cadena-larga-y-aleatoria>
+JWT_SECRET=<el secret de GitHub>
 JWT_EXPIRES_IN=7d
-
-FRONTEND_URL=https://tecnocar.byronrm.com
-BACKEND_URL=https://backtec.byronrm.com
+FRONTEND_URL=http://tecnocar.byronrm.com
+BACKEND_URL=http://backtec.byronrm.com
+FRONTEND_DOMAIN=tecnocar.byronrm.com
+BACKEND_DOMAIN=backtec.byronrm.com
+ADMINER_DOMAIN=pgtec.byronrm.com
 ```
 
-## 3. Construir y levantar el stack
+## 3. Levantar el stack (lo hace el workflow automáticamente)
 
 ```bash
 docker compose up -d --build
 ```
 
-Esto levanta: `postgres`, `backend`, `frontend`, `adminer` y `nginx-proxy-manager` (puertos 80, 443 y 81).
-El backend aplica las migraciones de Prisma automáticamente al iniciar.
+Levanta `postgres`, `backend`, `frontend` y `adminer`, cada uno con labels de Traefik para enrutar su subdominio. El backend aplica las migraciones de Prisma automáticamente al iniciar.
 
-## 4. Cargar los datos iniciales (una sola vez)
+## 4. Cargar los datos iniciales
+
+El workflow ya corre esto después de cada despliegue (es seguro repetirlo, no duplica datos):
 
 ```bash
 docker compose exec backend npx prisma db seed
 ```
 
-Esto crea:
-- Usuario admin: **admin@tecnocar.com** / **Tecnocar2026!** (⚠️ cámbialo apenas ingreses la primera vez, ver paso 6).
+Crea:
+- Usuario admin: **admin@tecnocar.com** / **Tecnocar2026!** (⚠️ cámbialo, ver paso 5).
 - Las 6 categorías del catálogo.
-- 6 productos de ejemplo con una imagen de marcador de posición (reemplázalas subiendo fotos reales desde el panel admin → Productos).
+- 6 productos de ejemplo con imagen de marcador de posición (reemplázalas subiendo fotos reales desde el panel admin → Productos).
 
-## 5. Configurar Nginx Proxy Manager (proxy y HTTPS)
+## 5. Verificación
 
-1. Entra a `http://83.171.248.249:81` (usuario/clave por defecto la primera vez: `admin@example.com` / `changeme` — Nginx Proxy Manager te pedirá cambiarla de inmediato).
-2. Ve a **Proxy Hosts → Add Proxy Host** y crea uno por cada subdominio, todos apuntando al **nombre del servicio** (no a `localhost`), ya que Nginx Proxy Manager y los contenedores comparten la misma red de Docker:
+- `http://tecnocar.byronrm.com` — el sitio, navega productos, agrega al carrito, haz un pedido de prueba.
+- `http://backtec.byronrm.com/api/docs` — Swagger de la API.
+- `http://tecnocar.byronrm.com/login` — inicia sesión con el admin, entra a `/admin`. Cambia la contraseña creando un nuevo usuario admin desde Usuarios (no hay pantalla de "cambiar mi contraseña" en esta versión).
+- `http://pgtec.byronrm.com` — Adminer; conecta con sistema `PostgreSQL`, servidor `postgres`, tus credenciales del `.env`.
 
-| Domain Name | Forward Hostname / IP | Forward Port |
-|---|---|---|
-| tecnocar.byronrm.com | `frontend` | 80 |
-| backtec.byronrm.com | `backend` | 3000 |
-| pgtec.byronrm.com | `adminer` | 8080 |
-| portainertec.byronrm.com | IP del host del VPS | 8000 |
+## Agregar HTTPS (opcional, toca la configuración compartida de Traefik)
 
-3. En la pestaña **SSL** de cada uno: activa "Request a new SSL Certificate" (Let's Encrypt) + "Force SSL".
+Esto edita `/opt/traefik/traefik.yml` y su `docker-compose.yml`, que también sirve tu proyecto anterior — hazlo con cuidado (o pregunta a tu tutor si el VPS es compartido con más gente):
 
-> `portainertec` apunta a Portainer, que corre fuera de este `docker-compose` (paso 0) — por eso se enruta por IP del host y no por nombre de servicio.
+1. Agrega un entrypoint `websecure` (443) + un `certificatesResolver` de Let's Encrypt en `traefik.yml`.
+2. Publica el puerto 443 en `/opt/traefik/docker-compose.yml` y monta un volumen para `acme.json`.
+3. Agrega labels `traefik.http.routers.<x>.tls.certresolver=<resolver>` a los servicios de este proyecto (backend, frontend, adminer) en su `docker-compose.yml`.
+4. Cambia `FRONTEND_URL`/`BACKEND_URL` en los secrets/`.env` a `https://`.
 
-## 6. Verificación final
-
-- `https://tecnocar.byronrm.com` — carga el sitio, navega productos, agrega al carrito y haz un pedido de prueba.
-- `https://backtec.byronrm.com/api/docs` — Swagger de la API.
-- `https://tecnocar.byronrm.com/login` — inicia sesión con el admin, entra a `/admin`, **cambia la contraseña del admin creando un nuevo usuario admin desde Usuarios y desactivando/cambiando la clave del original** (no hay pantalla de "cambiar mi contraseña" en esta versión; si la necesitas, pídemela y la agrego).
-- `https://pgtec.byronrm.com` — Adminer; conecta con `postgres` / tus credenciales del `.env`.
+Si quieres, dime y te preparo exactamente esos cambios cuando estés listo.
 
 ## Mantenimiento
 
-- **Ver logs:** `docker compose logs -f backend` (o `frontend`, `postgres`).
-- **Actualizar tras un cambio de código:** `docker compose up -d --build backend` (o `frontend`).
+- **Ver logs:** `docker compose logs -f backend` (o `frontend`, `postgres`) desde `/opt/tecnocar`.
+- **Redeploy manual:** `docker compose up -d --build` desde `/opt/tecnocar`, o simplemente `git push` a `main`.
 - **Backup de la base de datos:** `docker compose exec postgres pg_dump -U postgres tecnocar > backup.sql`.
 - **Imágenes de productos** se guardan en el volumen `backend_uploads`; no se pierden al reconstruir contenedores, solo si borras el volumen.

@@ -41,6 +41,13 @@ services:
       retries: 10
     networks:
       - tecnocar
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.tecnocar-backend.rule=Host(`${BACKEND_DOMAIN}`)"
+      - "traefik.http.routers.tecnocar-backend.entrypoints=web"
+      - "traefik.http.services.tecnocar-backend.loadbalancer.server.port=3000"
 
   frontend:
     build:
@@ -53,6 +60,13 @@ services:
       - backend
     networks:
       - tecnocar
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.tecnocar-frontend.rule=Host(`${FRONTEND_DOMAIN}`)"
+      - "traefik.http.routers.tecnocar-frontend.entrypoints=web"
+      - "traefik.http.services.tecnocar-frontend.loadbalancer.server.port=80"
 
   adminer:
     image: adminer:4
@@ -63,26 +77,20 @@ services:
       - postgres
     networks:
       - tecnocar
-
-  nginx-proxy-manager:
-    image: jc21/nginx-proxy-manager:latest
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "81:81"
-    volumes:
-      - npm_data:/data
-      - npm_letsencrypt:/etc/letsencrypt
-    networks:
-      - tecnocar
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.tecnocar-adminer.rule=Host(`${ADMINER_DOMAIN}`)"
+      - "traefik.http.routers.tecnocar-adminer.entrypoints=web"
+      - "traefik.http.services.tecnocar-adminer.loadbalancer.server.port=8080"
 
 networks:
   tecnocar:
     driver: bridge
+  traefik:
+    external: true
 
 volumes:
   postgres_data:
   backend_uploads:
-  npm_data:
-  npm_letsencrypt:
