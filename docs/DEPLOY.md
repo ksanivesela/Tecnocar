@@ -1,14 +1,12 @@
 # Despliegue en el VPS de Contabo
 
-Guía para publicar Tecnocar N&S en el VPS (83.171.248.249), que ya tiene **Traefik** (proxy inverso) y **Portainer** corriendo de un proyecto anterior. Este proyecto se integra a ese Traefik existente en vez de instalar un proxy propio.
+Guía para publicar Tecnocar N&S en el VPS (83.171.248.249), que ya tiene **Traefik** (proxy inverso, con HTTPS/Let's Encrypt) y **Portainer** corriendo de un proyecto anterior. Este proyecto se integra a ese Traefik existente en vez de instalar un proxy propio.
 
-Subdominios:
+Subdominios (todos con HTTPS):
 - `tecnocar.byronrm.com` → frontend
 - `backtec.byronrm.com` → backend (API)
 - `pgtec.byronrm.com` → Adminer (administración de la base de datos)
 - `portainertec.byronrm.com` → Portainer (ya existente, fuera de este proyecto)
-
-> ⚠️ Traefik en este VPS solo tiene el entrypoint `web` (puerto 80, HTTP). No hay HTTPS/Let's Encrypt configurado todavía. Por eso el sitio queda en `http://` por ahora — ver la sección "Agregar HTTPS" al final para la opción de subir eso a Traefik (afecta la configuración compartida, así que es un paso aparte y deliberado).
 
 ## Cómo se despliega
 
@@ -20,6 +18,8 @@ Secrets ya configurados en GitHub (Settings → Secrets and variables → Action
 ## 1. Red de Traefik
 
 El `docker-compose.yml` espera una red externa llamada `traefik` (la misma que ya usa el Traefik existente). Ya existe en este VPS — no hay que crearla.
+
+Cada servicio (backend, frontend, adminer) usa el entrypoint `websecure` (443) con `tls.certresolver=letsencrypt`; Traefik pide el certificado automáticamente la primera vez que alguien llega a ese subdominio.
 
 ## 2. Variables de entorno en el VPS
 
@@ -36,8 +36,8 @@ POSTGRES_PASSWORD=<el secret de GitHub>
 POSTGRES_DB=tecnocar
 JWT_SECRET=<el secret de GitHub>
 JWT_EXPIRES_IN=7d
-FRONTEND_URL=http://tecnocar.byronrm.com
-BACKEND_URL=http://backtec.byronrm.com
+FRONTEND_URL=https://tecnocar.byronrm.com
+BACKEND_URL=https://backtec.byronrm.com
 FRONTEND_DOMAIN=tecnocar.byronrm.com
 BACKEND_DOMAIN=backtec.byronrm.com
 ADMINER_DOMAIN=pgtec.byronrm.com
@@ -49,7 +49,7 @@ ADMINER_DOMAIN=pgtec.byronrm.com
 docker compose up -d --build
 ```
 
-Levanta `postgres`, `backend`, `frontend` y `adminer`, cada uno con labels de Traefik para enrutar su subdominio. El backend aplica las migraciones de Prisma automáticamente al iniciar.
+Levanta `postgres`, `backend`, `frontend` y `adminer`, cada uno con labels de Traefik para enrutar su subdominio con HTTPS. El backend aplica las migraciones de Prisma automáticamente al iniciar.
 
 ## 4. Cargar los datos iniciales
 
@@ -66,21 +66,19 @@ Crea:
 
 ## 5. Verificación
 
-- `http://tecnocar.byronrm.com` — el sitio, navega productos, agrega al carrito, haz un pedido de prueba.
-- `http://backtec.byronrm.com/api/docs` — Swagger de la API.
-- `http://tecnocar.byronrm.com/login` — inicia sesión con el admin, entra a `/admin`. Cambia la contraseña creando un nuevo usuario admin desde Usuarios (no hay pantalla de "cambiar mi contraseña" en esta versión).
-- `http://pgtec.byronrm.com` — Adminer; conecta con sistema `PostgreSQL`, servidor `postgres`, tus credenciales del `.env`.
+- `https://tecnocar.byronrm.com` — el sitio, navega productos, agrega al carrito, haz un pedido de prueba.
+- `https://backtec.byronrm.com/api/docs` — Swagger de la API.
+- `https://tecnocar.byronrm.com/login` — inicia sesión con el admin, entra a `/admin`. Cambia la contraseña creando un nuevo usuario admin desde Usuarios (no hay pantalla de "cambiar mi contraseña" en esta versión).
+- `https://pgtec.byronrm.com` — Adminer; conecta con sistema `PostgreSQL`, servidor `postgres`, tus credenciales del `.env`.
 
-## Agregar HTTPS (opcional, toca la configuración compartida de Traefik)
+## Traefik: notas de la configuración compartida
 
-Esto edita `/opt/traefik/traefik.yml` y su `docker-compose.yml`, que también sirve tu proyecto anterior — hazlo con cuidado (o pregunta a tu tutor si el VPS es compartido con más gente):
+Este VPS también corre otros servicios además de este proyecto. Cosas a tener en cuenta si vuelves a tocar `/opt/traefik/`:
 
-1. Agrega un entrypoint `websecure` (443) + un `certificatesResolver` de Let's Encrypt en `traefik.yml`.
-2. Publica el puerto 443 en `/opt/traefik/docker-compose.yml` y monta un volumen para `acme.json`.
-3. Agrega labels `traefik.http.routers.<x>.tls.certresolver=<resolver>` a los servicios de este proyecto (backend, frontend, adminer) en su `docker-compose.yml`.
-4. Cambia `FRONTEND_URL`/`BACKEND_URL` en los secrets/`.env` a `https://`.
-
-Si quieres, dime y te preparo exactamente esos cambios cuando estés listo.
+- `traefik.yml` y `docker-compose.yml` ahí definen: entrypoints `web` (80, redirige a HTTPS), `websecure` (443), `traefik` (8080, dashboard), y el resolver `letsencrypt` (HTTP challenge vía el entrypoint `web`).
+- El dashboard (`http://83.171.248.249:8080/dashboard/`) requiere usuario/contraseña (Basic Auth vía Traefik).
+- Los certificados se guardan en `/opt/traefik/letsencrypt/acme.json` — no se debe borrar sin necesidad, o habría que volver a pedir todos los certificados.
+- Se removió un proyecto anterior (`devops-final-project`, desplegado como Docker Swarm stack) que competía por el puerto 80 — si vuelves a desplegar algo similar en Swarm con puerto publicado directo, puede volver a chocar con Traefik.
 
 ## Mantenimiento
 

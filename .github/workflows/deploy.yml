@@ -37,8 +37,8 @@ jobs:
             POSTGRES_DB=tecnocar
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_EXPIRES_IN=7d
-            FRONTEND_URL=http://tecnocar.byronrm.com
-            BACKEND_URL=http://backtec.byronrm.com
+            FRONTEND_URL=https://tecnocar.byronrm.com
+            BACKEND_URL=https://backtec.byronrm.com
             FRONTEND_DOMAIN=tecnocar.byronrm.com
             BACKEND_DOMAIN=backtec.byronrm.com
             ADMINER_DOMAIN=pgtec.byronrm.com
