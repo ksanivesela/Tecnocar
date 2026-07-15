@@ -60,7 +60,7 @@ docker compose exec backend npx prisma db seed
 ```
 
 Crea:
-- Usuario admin: **admin@tecnocar.com** / **Tecnocar2026!** (⚠️ cámbialo, ver paso 5).
+- Usuario admin: **admin@tecnocar.com** / **Tecnocar2026!** 
 - Las 6 categorías del catálogo.
 - 6 productos de ejemplo con imagen de marcador de posición (reemplázalas subiendo fotos reales desde el panel admin → Productos).
 
