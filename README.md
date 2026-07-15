@@ -59,7 +59,7 @@ npm install
 npm run dev                # http://localhost:5173
 ```
 
-**Credenciales de admin por defecto** (seed): `admin@tecnocar.com` / `Tecnocar2026!` — cámbialas antes de usar en un entorno real.
+**Credenciales de admin por defecto** (seed): `admin@tecnocar.com` / `Tecnocar2026!` 
 
 ## Arquitectura de despliegue
 
