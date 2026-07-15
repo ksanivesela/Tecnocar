@@ -3,10 +3,13 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import CartDrawer from "../cart/CartDrawer";
 import { useAuthStore } from "../../store/useAuthStore";
+import { useCartStore } from "../../store/useCartStore";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
+  const cart = useCartStore((state) => state.cart);
+  const itemCount = cart.reduce((sum, item) => sum + item.cantidad, 0);
   const [scroll, setScroll] = useState(false);
   const [open, setOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -70,26 +73,33 @@ export default function Navbar() {
 
           </nav>
 
-          <div className="hidden lg:flex gap-5 items-center">
+          <div className="flex gap-5 items-center">
 
-            <ShoppingCart
-              className="cursor-pointer transition-all duration-300 hover:text-[#00E676] hover:scale-110"
-              onClick={() => setCartOpen(true)}
-            />
+            <div className="relative">
+              <ShoppingCart
+                className="cursor-pointer transition-all duration-300 hover:text-[#00E676] hover:scale-110"
+                onClick={() => setCartOpen(true)}
+              />
+              {itemCount > 0 && (
+                <span className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#00E676] text-xs font-bold text-black">
+                  {itemCount}
+                </span>
+              )}
+            </div>
 
             <User
               className="cursor-pointer transition-all duration-300 hover:text-[#00E676] hover:scale-110"
               onClick={() => navigate(user?.rol === "ADMIN" ? "/admin" : "/login")}
             />
 
-          </div>
+            <button
+              className="lg:hidden"
+              onClick={() => setOpen(!open)}
+            >
+              {open ? <X /> : <Menu />}
+            </button>
 
-          <button
-            className="lg:hidden"
-            onClick={() => setOpen(!open)}
-          >
-            {open ? <X /> : <Menu />}
-          </button>
+          </div>
 
         </div>
 

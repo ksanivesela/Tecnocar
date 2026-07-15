@@ -64,7 +64,7 @@ export default function CartDrawer({ open, onClose }: Props) {
 
   return (
     <aside
-      className={`fixed top-0 right-0 h-screen w-[420px] bg-[#12161F] border-l border-[#2a313d] z-[999] duration-300 ${
+      className={`fixed top-0 right-0 h-screen w-full max-w-[420px] bg-[#12161F] border-l border-[#2a313d] z-[999] duration-300 ${
         open ? "translate-x-0" : "translate-x-full"
       }`}
     >
