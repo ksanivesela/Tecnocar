@@ -92,3 +92,4 @@ No requiere pasos manuales para desplegar — solo hacer push.
 Ver `.env.example` (raíz, backend y frontend). En producción, las variables sensibles (`POSTGRES_PASSWORD`, `JWT_SECRET`, credenciales SSH del VPS) se guardan como **Secrets** en GitHub, no en el repositorio.
 
 📄 **Guía completa de despliegue e infraestructura:** [`docs/DEPLOY.md`](docs/DEPLOY.md)
+📄 **Configuración de Traefik y Portainer (VPS):** [`docs/INFRAESTRUCTURA-VPS.md`](docs/INFRAESTRUCTURA-VPS.md)
